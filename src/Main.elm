@@ -37,7 +37,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      ( { model | time = newTime, timeLeft = timeUntilEve model.zone newTime }
+      ( { model | time = newTime, timeLeft = timeLeftForNewYear model.zone newTime }
       , Cmd.none
       )
 
@@ -46,17 +46,17 @@ update msg model =
       , Cmd.none
       )
 
+-- 1s == 1000ms
+hour = 1000 * 60 * 60
+year = hour * 24 * 365 + 6 * hour
 
-day = 1000 * 60 * 60 * 24
-dezember31st1969 = 0 - day
-
-timeUntilEve : Time.Zone -> Time.Posix -> Time.Posix
-timeUntilEve here now = 
-  Time.millisToPosix ((dezember31st1969 + yearToMillis here now) - Time.posixToMillis (now))
+timeLeftForNewYear : Time.Zone -> Time.Posix -> Time.Posix
+timeLeftForNewYear here now =
+  Time.millisToPosix ((yearToMillis here now) - Time.posixToMillis (now))
 
 yearToMillis : Time.Zone -> Time.Posix -> Int
 yearToMillis here now =
-  round (toFloat (day * (Time.toYear here now)) * 365.4)
+  year * (Time.toYear here now) - year * 1970
 
 -- SUBSCRIPTIONS
 
@@ -85,14 +85,7 @@ view : Model -> Html Msg
 view model =
   div []
   [
-  let
-    hour = String.fromInt (Time.toHour model.zone model.time)
-    minute = String.fromInt (Time.toMinute model.zone model.time)
-    second = String.fromInt (Time.toSecond model.zone model.time)
-  in
-    h1 [] [ text (hour ++ ":" ++ minute ++ ":" ++  second) ]
-  , div [] [ text "--------------------" ]
-  , let
+    let
       months = String.fromInt (toInt (Time.toMonth model.zone model.timeLeft))
       days = String.fromInt (Time.toDay model.zone model.timeLeft)
       hoursLeft = String.fromInt (Time.toHour model.zone model.timeLeft)
@@ -100,5 +93,4 @@ view model =
       secondsLeft = String.fromInt (Time.toSecond model.zone model.timeLeft)
     in
       h1 [] [ text (months ++ " months, " ++ days ++ " days, " ++ hoursLeft ++ " hours, " ++ minutesLeft ++ " minutes and " ++ secondsLeft ++ " seconds left in the year!") ]
-  --, div [] [ text ("millis: " ++ String.fromInt (Time.posixToMillis model.timeLeft))]
   ]
